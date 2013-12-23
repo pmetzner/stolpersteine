@@ -63,13 +63,13 @@ data.sort(['deport', 'death'], inplace=True)
 
 ## Merge first name, last name (and optionally maiden name) into one string
 
-for i in xrange(1,data.shape[0]):
-    if pd.isnull(data['Nachname'][i-1]):
-        data['name'][i-1] = data['Vorname'][i-1]
-    elif pd.isnull(data['Geburtsname'][i-1]):
-        data['name'][i-1] = data['Vorname'][i-1] + " " + data['Nachname'][i-1]
+for i in xrange(0,data.shape[0]-1):
+    if pd.isnull(data['Nachname'][i]):
+        data['name'][i] = data['Vorname'][i]
+    elif pd.isnull(data['Geburtsname'][i]):
+        data['name'][i] = data['Vorname'][i] + " " + data['Nachname'][i]
     else:
-        data['name'][i-1] = data['Vorname'][i-1] + " " + data['Nachname'][i-1] + " (geb. " + data['Geburtsname'][i-1] + ")"
+        data['name'][i] = data['Vorname'][i] + " " + data['Nachname'][i] + " (geb. " + data['Geburtsname'][i] + ")"
 
 ## Sanitize place of murder
 output = data[['name', 'deport', 'death', 'timestamp', 'Todesort', 'Adresse', 'lat', 'lng']]

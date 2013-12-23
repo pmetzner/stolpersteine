@@ -5,14 +5,14 @@
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://d3js.org/queue.v1.min.js"></script>
     <script src="http://d3js.org/topojson.v1.min.js"></script>
-    <link href='http://fonts.googleapis.com/css?family=Rokkitt:400,700' rel='stylesheet' type='text/css'>
+    <link href='http://fonts.googleapis.com/css?family=Oswald:400,300,700' rel='stylesheet' type='text/css'>
     <style type="text/css">
 
       body {
-        font-family: 'Rokkitt', serif;
+        font-family: 'Oswald', serif;
         background-color:#615a55;
         font-size: 12px;
-        font-weight: 700;
+        font-weight: 300;
         color: #f7f7ff;
       }
 
@@ -20,6 +20,10 @@
          padding:0px; 
          margin:0px;
       }
+
+
+      a:link {color:#dfb431;}
+      a:visited {color:#dfb431;}
 
       div.tooltip {
 		position: absolute;
@@ -52,21 +56,11 @@
           fill: #dfb431;
       }
 
-      a:link {color:#dfb431;}      /* unvisited link */
-      a:visited {color:#dfb431;}  /* visited link */
-      
-      text {
-        /* font-family: 'Rokkitt', serif; */
-        pointer-events: none;
-        font-size: 12px;
-        font-weight: 400;
-      }
-
 </style>
 </head>
 <body background-color: #999988;>
 
-<p style = 'font-size:26px'><strong>Deportations from Third Reich Berlin</strong></p>
+<p style = 'font-size:26px'><strong>Stolpersteine for Holocaust victims in Berlin</strong></p>
 
 <div id="map"></div>
 <p>
@@ -87,8 +81,6 @@
      .attr("width", width)
      .attr("height", height);
 
- var quantize = d3.scale.quantize();
-
  d3.json('berlin.json', function(error, data) {
 
      var districts = topojson.feature(data, data.objects.states);
@@ -100,7 +92,7 @@
      // District boundaries
      var b = path.bounds(districts),
          s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
-         t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+         t = [((width - s * (b[1][0] + b[0][0])) / 2) + 20, (height - s * (b[1][1] + b[0][1])) / 2];
 
      projection
          .scale(s)
@@ -115,7 +107,6 @@
          .data(topojson.feature(data, data.objects.states).features)
          .enter().append("path")
          .attr("class", "district")
-         //.attr("class", function(d) { return "district " + d.id; })
          .attr("d", path);
 
      var div = d3.select("#tooltip")
@@ -146,12 +137,11 @@
 
          dots.enter()
              .append("circle")
-             .attr("opacity", 0)
+             .attr("r", 0)
              .attr("name", function(d) { return d.name;})
              .attr("transform", function(d) {
                  return "translate(" + projection([d.lng, d.lat]) + ")";
              })
-             .attr("r", 3)
              .attr("class", "dot")
              .on("mouseover", function(d) {
                  div.transition()        
@@ -164,18 +154,18 @@
                               "<p style='padding-top: 8px'>Deportiert am " + fd(d.posdeport) + "<br/>" +
                               "Ermordet am "  + fd(d.posdeath) + " (" + d.murder + ")")
                               .style("left", "20px")
-                              .style("top", "40px");
+                              .style("top", "60px");
                  } else if (d.death == "1945-05-08" && d.murder != "Unbekannter Todesort"){
                      div.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
                               "<p>" + d.address + "</p>" +
                               "<p style='padding-top: 8px'>Ermordet in "  + d.murder + "</p>")
                               .style("left", "20px")
-                              .style("top", "40px");
+                              .style("top", "60px");
                  } else {
                      div.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
                               "<p>" + d.address + "</p>")
                               .style("left", "20px")
-                              .style("top", "40px");
+                              .style("top", "60px");
                  }
                         
                  d3.select(this)
@@ -202,10 +192,11 @@
          .on("click", function() {
              svg.selectAll("circle")
                  .transition()
-                 .duration(1000)
+                 .duration(1500)
                  .delay(function(d) {
                      return d.timestamp * 2;
                  })
+                 .attr("r", 3)
                  .attr("opacity", .5);
      });
     
@@ -217,9 +208,12 @@
   target="new">open data initiative</a> (licensed
   under <a href="http://creativecommons.org/licenses/by/3.0/"
   target="new">Creative Commons Attribution</a>). Each dot represents
-  a <i>Stolperstein</i> (stumbling block). Those are brass plates that remind us
-  of the victims of the Third Reich holocaust at the places where they used to
-  live. The code for data preparation and visualization can be found at
-  <a href="http://www.github.com/plmtznr/stolpersteine" target="new">http://www.github.com/plmtznr/stolpersteine</a>.</p>
+  a <a href="http://www.stolpersteine-berlin.de"
+  target="new"><i>Stolperstein</i></a> (stumbling block). Those are brass plates
+  that remind us of the victims of the Third Reich holocaust at the places where
+  they used to live. The code for data preparation and visualization can be
+  found at
+  <a href="http://www.github.com/plmtznr/stolpersteine"
+  target="new">http://www.github.com/plmtznr/stolpersteine</a>.</p>
 </body>
 </html>
