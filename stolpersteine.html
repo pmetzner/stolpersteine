@@ -16,11 +16,23 @@
         color: #f7f7ff;
       }
 
+      .h1 {
+        font-size: 26px;
+        font-weight: 700;
+      }
+      
+      div.starter {
+        font-size: 32px;
+        font-weight: 700;
+        position: absolute;
+        color: #dfb431;
+        text-align: center;
+      }
+
       p {
          padding:0px; 
          margin:0px;
       }
-
 
       a:link {color:#dfb431;}
       a:visited {color:#dfb431;}
@@ -60,10 +72,9 @@
 </head>
 <body background-color: #999988;>
 
-<p style = 'font-size:26px'><strong>Stolpersteine for Holocaust victims in Berlin</strong></p>
+<h1>Stolpersteine for Holocaust victims in Berlin</h1>
 
 <div id="map"></div>
-<p>
 <div id="tooltip"></div>
 
 <script type="text/javascript">
@@ -84,12 +95,19 @@
  d3.json('berlin.json', function(error, data) {
 
      var districts = topojson.feature(data, data.objects.states);
+     
+     var tooltip = d3.select("#tooltip")
+         .append("div")   
+         .attr("class", "tooltip")
+         .style("opacity", 0);
+
+     var starter = d3.selectAll("#map")
+         .append("div");
 
      projection
          .scale(1)
          .translate([0, 0]);
-     
-     // District boundaries
+
      var b = path.bounds(districts),
          s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
          t = [((width - s * (b[1][0] + b[0][0])) / 2) + 20, (height - s * (b[1][1] + b[0][1])) / 2];
@@ -109,27 +127,22 @@
          .attr("class", "district")
          .attr("d", path);
 
-     var div = d3.select("#tooltip")
-         .append("div")   
-         .attr("class", "tooltip")
-         .style("opacity", 0);
+     starter.html("Click on map to show <i>Stolpersteine</i> in chronological order")
+         .attr("class", "starter")
+         .style("width", width)
+         .style("left", "100px")
+         .style("top", (height / 2) + 20 + "px");
 
      d3.tsv("stolpersteine.tsv", function(error, data) {
 
          pd = d3.time.format("%Y-%m-%d").parse
          fd = d3.time.format("%d.%m.%Y")
-         yr = d3.time.format("%Y")
-         dp = d3.time.days
 
          data.forEach(function(d) {
              d.lat = +d.lat;
              d.lng = +d.lng;
              d.posdeport = pd(d.deport)
              d.posdeath = pd(d.death)
-             
-             if (d.murder == '') {
-                 d.murder = 'unbekannter Todesort'
-             } 
          });
 
          var dots = svg.selectAll("circle")
@@ -138,31 +151,32 @@
          dots.enter()
              .append("circle")
              .attr("r", 0)
+             .attr("opacity", 0.5)
              .attr("name", function(d) { return d.name;})
              .attr("transform", function(d) {
                  return "translate(" + projection([d.lng, d.lat]) + ")";
              })
              .attr("class", "dot")
              .on("mouseover", function(d) {
-                 div.transition()        
+                 tooltip.transition()        
                      .duration(50)
                      .style("opacity", 1);
 
                  if(d.deport != "1945-05-08" && d.death != "1945-05-08") {
-                     div.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
+                     tooltip.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
                               "<p>" + d.address + "</p>" +
                               "<p style='padding-top: 8px'>Deportiert am " + fd(d.posdeport) + "<br/>" +
                               "Ermordet am "  + fd(d.posdeath) + " (" + d.murder + ")")
                               .style("left", "20px")
                               .style("top", "60px");
                  } else if (d.death == "1945-05-08" && d.murder != "Unbekannter Todesort"){
-                     div.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
+                     tooltip.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
                               "<p>" + d.address + "</p>" +
                               "<p style='padding-top: 8px'>Ermordet in "  + d.murder + "</p>")
                               .style("left", "20px")
                               .style("top", "60px");
                  } else {
-                     div.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
+                     tooltip.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
                               "<p>" + d.address + "</p>")
                               .style("left", "20px")
                               .style("top", "60px");
@@ -175,7 +189,7 @@
                  
              })
              .on("mouseout", function(d) {
-                 div.transition()        
+                 tooltip.transition()        
                      .duration(500)      
                      .style("opacity", 0);
                  
@@ -190,20 +204,25 @@
 
      d3.selectAll("#map")
          .on("click", function() {
+
+             starter.transition()
+                 .duration(250)
+                 .attr("opacity", 0)
+                 .remove();
+
              svg.selectAll("circle")
                  .transition()
                  .duration(1500)
                  .delay(function(d) {
-                     return d.timestamp * 2;
+                     return d.timestamp * 2 + (Math.random() * 10);
                  })
-                 .attr("r", 3)
-                 .attr("opacity", .5);
+                 .attr("r", 3);
      });
     
 });
 
 </script>
-<p style='font-size: 18px'>The data for this visualization come from
+<p style='font-size: 18px; width:1000'>The data for this visualization come from
   Berlin's <a href="http://daten.berlin.de/datensaetze/liste-der-stolpersteine-berlin"
   target="new">open data initiative</a> (licensed
   under <a href="http://creativecommons.org/licenses/by/3.0/"
