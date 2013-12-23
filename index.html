@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="content-type" content="text/html" charset="utf-8">
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://d3js.org/queue.v1.min.js"></script>
+    <script src="http://d3js.org/topojson.v1.min.js"></script>
+    <link href='http://fonts.googleapis.com/css?family=Rokkitt:400,700' rel='stylesheet' type='text/css'>
+    <style type="text/css">
+
+      body {
+        font-family: 'Rokkitt', serif;
+        background-color:#615a55;
+        color: #eeeeee;}
+
+      div.tooltip {
+		position: absolute;
+        font-family: 'Rokkitt', serif;
+        text-align: left;
+        padding: 6px;
+        border: 0px;
+        border-radius: 8px;
+        pointer-events: none;
+      }
+      
+      .district { 
+        fill: #333333;
+        stroke: #262626;
+        stroke-width: 2px;
+      }
+      
+      .mesh {
+        stroke-width: .5px;
+        stroke-linejoin: round;
+      }
+      
+      .boundary {
+        stroke: #FFFFFF;
+        stroke-width: 2px;
+        fill: none;
+      }
+
+      .dot {
+          fill: #dfb431;
+          fill-opacity: 0.5;
+      }
+
+      a:link {color:#dfb431;}      /* unvisited link */
+      a:visited {color:#dfb431;}  /* visited link */
+      
+      text {
+        font-family: 'Rokkitt', serif;
+        pointer-events: none;
+        fill-opacity: .5;
+        font-size: 10px;
+        font-weight: 500;
+        text-anchor: middle;
+      }
+
+</style>
+</head>
+<body background-color: #999988;>
+
+<p style = 'font-size:22px'><strong>Deportations from Third Reich Berlin</strong></p>
+
+<div id="map"></div>
+<p>
+<div id="tooltip"></div>
+
+<script type="text/javascript">
+
+ var width = 1000, height = 800;
+
+
+ var projection = d3.geo.albers()
+     .rotate([-7, 0]);
+
+ var path = d3.geo.path()
+     .projection(projection);
+
+ var svg = d3.select("#map").append("svg")
+     .attr("width", width)
+     .attr("height", height);
+
+ var quantize = d3.scale.quantize();
+
+ d3.json('berlin.json', function(error, data) {
+
+     var districts = topojson.feature(data, data.objects.states);
+
+     projection
+         .scale(1)
+         .translate([0, 0]);
+     
+     // District boundaries
+     var b = path.bounds(districts),
+         s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
+         t = [(width - s * (b[1][0] + b[0][0])) / 2, (height - s * (b[1][1] + b[0][1])) / 2];
+
+     projection
+         .scale(s)
+         .translate(t);
+
+     svg.append("path")
+         .datum(topojson.mesh(data, data.objects.states, function(a, b) { return a !== b; }))
+         .attr("class", "mesh")
+         .attr("d", path);
+
+     svg.selectAll("district")
+         .data(topojson.feature(data, data.objects.states).features)
+         .enter().append("path")
+         .attr("class", "district")
+         //.attr("class", function(d) { return "district " + d.id; })
+         .attr("d", path);
+
+     var div = d3.select("#tooltip")
+         .append("div")   
+         .attr("class", "tooltip")
+         .style("opacity", 0);
+
+     d3.tsv("stolpersteine.tsv", function(error, data) {
+
+         pd = d3.time.format("%Y-%m-%d").parse
+         fd = d3.time.format("%d.%m.%Y")
+         yr = d3.time.format("%Y")
+         dp = d3.time.days
+
+         data.forEach(function(d) {
+             d.lat = +d.lat;
+             d.lng = +d.lng;
+             d.posdeport = pd(d.deport)
+             d.posdeath = pd(d.death)
+             
+             if (d.murder == '') {
+                 d.murder = 'unbekannter Todesort'
+             } 
+         });
+
+         var dots = svg.selectAll("circle")
+             .data(data, function(d) { return d.name;})
+
+         dots.enter()
+             .append("circle")
+             .attr("opacity", 0)
+             .attr("name", function(d) { return d.name;})
+             .attr("transform", function(d) {
+                 return "translate(" + projection([d.lng, d.lat]) + ")";
+             })
+             .attr("r", 3)
+             .attr("class", "dot");
+
+
+     });
+
+     d3.selectAll("#map")
+         .on("click", function() {
+             svg.selectAll("circle")
+                 .transition()
+                 .duration(1000)
+                 .delay(function(d) {
+                     return d.timestamp * 2;
+                 })
+                 .attr("opacity", .9);
+     });
+    
+});
+
+</script>
+<p>The data for this visualization come
+  from <a href="http://daten.berlin.de/datensaetze/liste-der-stolpersteine-berlin"
+          target="new">http://daten.berlin.de/datensaetze/liste-der-stolpersteine-berlin</a>.
+</body>
+</html>
