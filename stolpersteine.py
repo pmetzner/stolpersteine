@@ -72,7 +72,8 @@ for i in xrange(1,data.shape[0]):
         data['name'][i-1] = data['Vorname'][i-1] + " " + data['Nachname'][i-1] + " (geb. " + data['Geburtsname'][i-1] + ")"
 
 ## Sanitize place of murder
-output = data[['name', 'deport', 'death', 'timestamp', 'Todesort', 'lat', 'lng']]
-output.columns = ['name', 'deport', 'death', 'timestamp', 'murder', 'lat', 'lng']
+output = data[['name', 'deport', 'death', 'timestamp', 'Todesort', 'Adresse', 'lat', 'lng']]
+output.columns = ['name', 'deport', 'death', 'timestamp', 'murder', 'address', 'lat', 'lng']
+output.murder = output.murder.fillna("Unbekannter Todesort")
 
 output.to_csv('./stolpersteine.tsv', sep = '\t', index = False)
