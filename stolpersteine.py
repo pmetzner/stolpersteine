@@ -41,7 +41,7 @@ def geocode(address):
     """Fetch coordinates for address via Google Geocoding API, return dictionary with coordinates"""
     address = re.sub(' ', '+', address) # Replace whitespace with '+' for URL
     address = address + ',+Berlin,+Germany'
-    url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s,+%s&sensor=true" % address
+    url = "http://maps.googleapis.com/maps/api/geocode/json?address=%s&sensor=true" % address
     response = urllib2.urlopen(url)
     try:
         coord = json.load(response)
@@ -58,22 +58,17 @@ for address in data['Adresse'].unique():
 data['lat'] = [coords[a]['lat'] for a in data['Adresse']]
 data['lng'] = [coords[a]['lng'] for a in data['Adresse']]
 
-
-data.sort(['deport', 'death'], inplace=True)
-
 ## Merge first name, last name (and optionally maiden name) into one string
-
+data['name'] = ''
 for i in xrange(0,data.shape[0]-1):
     if pd.isnull(data['Nachname'][i]):
         data['name'][i] = data['Vorname'][i]
-    elif pd.isnull(data['Geburtsname'][i]):
-        data['name'][i] = data['Vorname'][i] + " " + data['Nachname'][i]
     else:
-        data['name'][i] = data['Vorname'][i] + " " + data['Nachname'][i] + " (geb. " + data['Geburtsname'][i] + ")"
+        data['name'][i] = data['Vorname'][i] + " " + data['Nachname'][i]
 
 ## Sanitize place of murder
 output = data[['name', 'deport', 'death', 'timestamp', 'Todesort', 'Adresse', 'lat', 'lng']]
 output.columns = ['name', 'deport', 'death', 'timestamp', 'murder', 'address', 'lat', 'lng']
-output.murder = output.murder.fillna("Unbekannter Todesort")
+output.murder = output.murder.fillna("place of death unknown")
 
 output.to_csv('./stolpersteine.tsv', sep = '\t', index = False)
