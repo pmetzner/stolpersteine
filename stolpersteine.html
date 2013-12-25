@@ -4,40 +4,42 @@
     <meta http-equiv="content-type" content="text/html" charset="utf-8">
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://d3js.org/topojson.v1.min.js"></script>
-    <link href='http://fonts.googleapis.com/css?family=Oswald:400,300,700' rel='stylesheet' type='text/css'>
     <style type="text/css">
 
      body {
-       font-family: 'Oswald', serif;
+       font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
        background-color:#615a55;
-       font-size: 12px;
-       font-weight: 300;
+       font-size: 14px;
        color: #f7f7ff;
      }
 
      h1 {
        font-size: 36px;
        font-weight: 700;
+       width: 800px;
+       color: #aaaaaa;
        padding: 10px;
-       color: #dfb431;
      }
      
-     div.starter {
-       font-size: 32px;
-       font-weight: 700;
-       position: absolute;
-       color: #dfb431;
-       margin: auto;
-       display: block;
-     }
+     /* div.starter { */
+     /*   font-size: 32px; */
+     /*   font-weight: 700; */
+     /*   position: absolute; */
+     /*   color: #d5b52f; */
+     /*   margin: auto; */
+     /*   display: block; */
+     /* } */
 
      p {
        padding:0px; 
        margin:0px;
      }
 
-     a:link {color:#dfb431;}
-     a:visited {color:#dfb431;}
+     a {
+       color: #aaaaaa;
+       text-decoration:none;
+     }
+
 
      div.tooltip {
 	   position: absolute;
@@ -50,7 +52,7 @@
      }
      
      .district { 
-       fill: #333333;
+       fill: #444444;
        stroke: #262626;
        stroke-width: 2px;
      }
@@ -60,8 +62,8 @@
        stroke-linejoin: round;
      }
 
-     .dot {
-       fill: #dfb431;
+     .plate {
+       fill: #d5b52f;
      }
 
 </style>
@@ -69,19 +71,31 @@
 
 <body>
 
-<h1>STOLPERSTEINE FOR HOLOCAUST VICTIMS IN BERLIN</h1>
+<h1>STOLPERSTEINE IN BERLIN</h1>
 
 <div id="tooltip"></div>
 <p>
-<div id="map"></div>
-<!-- <input type="range" value="0" min="0" max="255" step="any"> -->
+  <div id="map"></div>
+
+  <div style="width:800px; text-align:center">  
+    <div style = "font-size:16px; font-weight:700;text-align:center;margin:auto">
+      <input id="check1939" type="checkbox" value=1939 class="check" checked> 1939 </input>
+      <input id="check1940" type="checkbox" value=1940 class="check" checked> 1940 </input>
+      <input id="check1941" type="checkbox" value=1941 class="check" checked> 1941 </input>
+      <input id="check1942" type="checkbox" value=1942 class="check" checked> 1942 </input>
+      <input id="check1943" type="checkbox" value=1943 class="check" checked> 1943 </input>
+      <input id="check1944" type="checkbox" value=1944 class="check" checked> 1944 </input>
+      <input id="check1945" type="checkbox" value=1945 class="check" checked> 1945 </input>
+    </div> 
+    <p style="padding-top:8px; padding-bottom:14px; font-size:14px">Select or unselect a checkbox to show or hide data from the respective year.</p>
+  </div>
 
 <script type="text/javascript">
     
   var width = 800, height = 600;
 
   var projection = d3.geo.albers()
-      .rotate([-7, 0]);
+      .rotate([-6, 0]);
 
   var path = d3.geo.path()
       .projection(projection);
@@ -89,6 +103,10 @@
   var svg = d3.select("#map").append("svg")
       .attr("width", width)
       .attr("height", height);
+
+  function filteryears(year) {
+      return year.value;
+  }
   
   d3.json('berlin.json', function(error, data) {
       
@@ -109,7 +127,7 @@
       var b = path.bounds(districts),
           s = .95 / Math.max((b[1][0] - b[0][0]) / width, (b[1][1] - b[0][1]) / height),
           t = [((width - s * (b[1][0] + b[0][0])) / 2) + 20, (height - s * (b[1][1] + b[0][1])) / 2];
-      
+
       projection
           .scale(s)
           .translate(t);
@@ -124,57 +142,64 @@
           .enter().append("path")
           .attr("class", "district")
           .attr("d", path);
+
+      // var maprect = map.getBoundingClientRect();
       
-      starter.html("Click on map to show <i>Stolpersteine</i> in chronological order")
-          .attr("class", "starter")
-          .style("width", width)
-          .style("left", width/6 + "px")
-          .style("top", (height / 3) * 1.75 + "px");
+      // starter.html("&#x25b6;")
+      //     .attr("class", "starter")
+      //     .style("width", width)
+      //     .style("left", maprect.left + width/2 + "px")
+      //     .style("top", maprect.top + height/2 + "px");
       
       d3.tsv("stolpersteine.tsv", function(error, data) {
           
           pd = d3.time.format("%Y-%m-%d").parse
           fd = d3.time.format("%B %-d, %Y")
+          yd = d3.time.format("%Y")
           
           data.forEach(function(d) {
               d.lat = +d.lat;
               d.lng = +d.lng;
               d.posdeport = pd(d.deport)
               d.posdeath = pd(d.death)
+              d.year = yd(pd(d.deport))
           });
           
-          var dots = svg.selectAll("circle")
+          var plates = svg.selectAll("rect")
               .data(data, function(d) { return d.name;})
           
-          dots.enter()
-              .append("circle")
-              .attr("r", 0)
-              .attr("opacity", 0.35)
+          plates.enter()
+              .append("rect")
               .attr("name", function(d) { return d.name;})
               .attr("transform", function(d) {
                   return "translate(" + projection([d.lng, d.lat]) + ")";
               })
-              .attr("class", "dot")
-              .on("mouseover", function(d) {
+              .attr("width", 4)
+              .attr("height", 4)
+              .attr("opacity", 0.35)
+              .attr("class", "plate")
+
+
+              plates.on("mouseover", function(d) {
                   tooltip.transition()        
                       .duration(50)
                       .style("opacity", 1);
                   
                   if(d.deport != "1945-05-08" && d.death != "1945-05-08") {
-                      tooltip.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
+                      tooltip.html("<p style='font-size:22px; color: #d5b52f'><strong>" + d.name + "</strong></p>" + 
                                    "<p>" + d.address + "</p>" +
                                    "<p style='padding-top: 8px'>Deported " + fd(d.posdeport) + "<br/>" +
                                    "Murdered "  + fd(d.posdeath) + " (" + d.murder + ")")
                           .style("left", width * 2/3 + "px")
                           .style("top", height/4 + "px");
                   } else if (d.death == "1945-05-08" && d.murder != "place of death unknown"){
-                      tooltip.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
+                      tooltip.html("<p style='font-size:22px; color: #d5b52f'><strong>" + d.name + "</strong></p>" + 
                                    "<p>" + d.address + "</p>" +
                                    "<p style='padding-top: 8px'>Murdered in "  + d.murder + "</p>")
                           .style("left", width * 2/3 + "px")
                           .style("top", height/4 + "px");
                   } else {
-                      tooltip.html("<p style='font-size:22px; color: #dfb431'><strong>" + d.name + "</strong></p>" + 
+                      tooltip.html("<p style='font-size:22px; color: #d5b52f'><strong>" + d.name + "</strong></p>" + 
                                    "<p>" + d.address + "</p>")
                           .style("left", width * 2/3 + "px")
                           .style("top", height/4 + "px");
@@ -183,7 +208,8 @@
                   d3.select(this)
                       .transition()
                       .duration(100)
-                      .attr("r", 8);
+                      .attr("width", 8)
+                      .attr("height", 8);
                   
               })
               .on("mouseout", function(d) {
@@ -194,39 +220,52 @@
                   d3.select(this)
                       .transition()
                       .duration(250)
-                      .attr("r", 2);
+                      .attr("width", 4)
+                      .attr("height", 4);
               });
-          
-          
+
+          d3.selectAll(".check")
+              .on("change", function () {
+                  var year = this.value, 
+                      display = this.checked ? "inline" : "none";
+
+                  svg.selectAll("rect")
+                      .filter(function(d) { return d.year === year; } )
+                      .attr("display", display);
+              });
+
+
       });
 
-      d3.selectAll("#map")
-          .on("click", function() {
+      // d3.selectAll("#map")
+      //     .on("click", function() {
               
-              starter.transition()
-                  .duration(250)
-                  .attr("opacity", 0)
-                  .remove();
+      //         starter.transition()
+      //             .duration(250)
+      //             .attr("opacity", 0)
+      //             .remove();
               
-              svg.selectAll("circle")
-                  .transition()
-                  .duration(1500)
-                  .delay(function(d) {
-                      return d.timestamp * 2 + (Math.random() * 10);
-                  })
-                  .attr("r", 3);
-          });
+      //         svg.selectAll("circle")
+      //             .transition()
+      //             .duration(1500)
+      //             .delay(function(d) {
+      //                 return d.timestamp * 2 + (Math.random() * 10);
+      //             })
+      //             .attr("r", 3);
+
+
+      //     });
       
   });
   
 </script>
-<p style="font-size: 18px; width:800px; padding: 10px">The data for this visualization come from
+<p style="width:800px; padding: 10px">The data for this visualization come from
   Berlin's <a href="http://daten.berlin.de/datensaetze/liste-der-stolpersteine-berlin"
-              target="new">open data initiative</a> (licensed
+  target="new">open data initiative</a> (licensed
   under <a href="http://creativecommons.org/licenses/by/3.0/"
-           target="new">Creative Commons Attribution</a>). Each dot represents
+  target="new">Creative Commons Attribution</a>). Each small square represents
   a <a href="http://www.stolpersteine-berlin.de"
-       target="new"><i>Stolperstein</i></a> (stumbling block). Those are brass plates
+  target="new"><i>Stolperstein</i></a> (stumbling block). Those are brass plates
   that remind us of the victims of the Third Reich holocaust at the places where
   they used to live. The code for data preparation and visualization can be
   found at
